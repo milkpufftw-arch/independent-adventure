@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>自立大冒險 - 自立生活模擬器</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React 18 / ReactDOM 18 -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Chart.js for Radar Chart -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --ink:#0b0b0b;
+      --paper:#ffffff;
+      --bg1:#071022;
+      --bg2:#0a1a35;
+      --neo:#000;
+      --color-591: #ff8000;
+      --color-job: #0066cc;
+    }
+
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      background: radial-gradient(1200px 900px at 50% 25%, rgba(45, 110, 230, 0.18), transparent 55%),
+                  linear-gradient(180deg, var(--bg2), var(--bg1));
+      font-family: "Noto Sans TC", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      overflow:hidden;
+    }
+
+    .font-pixel{ font-family: "VT323", monospace; letter-spacing: 0.3px; }
+
+    /* Phone Shell */
+    .phone-shell{
+      width: 390px;
+      max-width: 92vw;
+      height: 760px;
+      max-height: 86vh;
+      border-radius: 36px;
+      background: linear-gradient(180deg, #111827, #0b1220);
+      border: 6px solid #2d2d2d;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(255,255,255,0.1);
+      position: relative;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .side-btn{ position:absolute; left:-8px; width: 6px; border-radius: 4px; background: #2d2d2d; }
+    .side-btn.b1{ top:120px; height: 46px; }
+    .side-btn.b2{ top:182px; height: 62px; }
+    .side-btn.r1{ left:auto; right:-8px; top:170px; height: 86px; }
+
+    .screen{
+      flex: 1;
+      border-radius: 24px;
+      background: #f8fafc;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scanlines::before{
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background: repeating-linear-gradient(to bottom, rgba(0,0,0,0.02), rgba(0,0,0,0.02) 1px, rgba(255,255,255,0) 3px, rgba(255,255,255,0) 6px);
+      mix-blend-mode: multiply; opacity: 0.4; z-index: 3;
+    }
+
+    /* Neo-Brutalism Styles */
+    .neo-shadow{ box-shadow: 4px 4px 0 rgba(0,0,0,1); }
+    .neo-card{ background: #fff; border: 2px solid #000; border-radius: 12px; box-shadow: 4px 4px 0 #000; }
+    .neo-soft{ background: #fff; border: 2px solid #000; border-radius: 8px; box-shadow: 2px 2px 0 #000; }
+    .neo-btn{ border: 2px solid #000; border-radius: 10px; box-shadow: 3px 3px 0 #000; transform: translate(0,0); transition: 0.06s; user-select:none; }
+    .neo-btn:active{ transform: translate(2px,2px); box-shadow: 1px 1px 0 #000; }
+    .neo-btn[disabled]{ opacity: 0.5; filter: grayscale(1); cursor: not-allowed; box-shadow: none; transform: translate(2px,2px); }
+
+    .float-text{ position:absolute; z-index: 20; font-weight: 800; text-shadow: 2px 2px 0 #000; animation: floatUp 0.9s ease-out both; pointer-events:none; font-family: "VT323", monospace; font-size: 32px; letter-spacing: 0.5px; }
+    @keyframes floatUp{ 0%{transform:translateY(0);opacity:0;} 15%{opacity:1;} 100%{transform:translateY(-42px);opacity:0;} }
+
+    /* Wheel Animation */
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(1800deg); } }
+    .wheel-container { 
+      width: 220px; height: 220px; border-radius: 50%; border: 6px solid #000; 
+      position: relative; overflow: hidden; 
+      background: conic-gradient(#ff8a80 0deg 72deg, #ffd180 72deg 144deg, #ffff8d 144deg 216deg, #cfd8dc 216deg 288deg, #80d8ff 288deg 360deg); 
+      box-shadow: 6px 6px 0 #000; 
+      margin: 0 auto;
+    }
+    .wheel-pointer { 
+      width: 0; height: 0; 
+      border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #000; 
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%); z-index: 10; 
+    }
+    .animate-spin-fast { animation: spin 0.8s cubic-bezier(0.5, 0.1, 0.15, 1) infinite; }
+
+    /* Custom App Styles */
+    .style-591-header { background-color: var(--color-591); color: white; }
+    .text-591 { color: var(--color-591); }
+    .style-job-header { background-color: var(--color-job); color: white; }
+    .text-job { color: var(--color-job); }
+
+    .content-scroll::-webkit-scrollbar{ width: 6px; }
+    .content-scroll::-webkit-scrollbar-thumb{ background: #ccc; border-radius: 99px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <div id="modal-root"></div>
+
+  <script type="text/babel">
+    const { useEffect, useMemo, useRef, useState } = React;
+
+    /***********************
+     * Utils & Logic (Global)
+     ***********************/
+    function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+    function uid(prefix="id"){ return prefix + "_" + Math.random().toString(16).slice(2) + "_" + Date.now(); }
+    function shuffleArray(arr){
+      const a = arr.slice();
+      for(let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+    function pickByProbability(items){
+      const r = Math.random();
+      let acc = 0;
+      for(const it of items){ acc += it.prob; if(r <= acc) return it; }
+      return items[items.length-1];
+    }
+
+    function calcLivingCost(state, house){
+      let livingCost = 1500;
+      if(state.hasHouse && house && !house.isCCSA) livingCost += 500;
+      return livingCost;
+    }
+
+    function applyDelta(base, delta){
+      const next = {...base};
+      if(delta.money) next.money += delta.money;
+      if(delta.health) next.health = clamp(next.health + delta.health, 0, 100);
+      if(delta.mood) next.mood = clamp(next.mood + delta.mood, 0, 100);
+      if(delta.security) next.security = clamp(next.security + delta.security, 0, 100);
+      if(delta.ap) next.ap = clamp(next.ap + delta.ap, 0, next.maxAp);
+      if(delta.maxAp) next.maxAp = clamp(next.maxAp + delta.maxAp, 1, 9);
+      
+      if(delta.ccsa){
+        const c = {...next.ccsaStats};
+        Object.keys(delta.ccsa).forEach(k => {
+          c[k] = clamp(c[k] + delta.ccsa[k], 0, 100);
+        });
+        next.ccsaStats = c;
+      }
+      return next;
+    }
+
+    /***********************
+     * Data
+     ***********************/
+    const INITIAL_STATS = {
+      money: 0, health: 100, mood: 55, security: 55, week: 1, maxWeeks: 8, age: 16, ap: 3, maxAp: 3,
+      ccsaStats: {
+        financial_income: 50, financial_manage: 50, // 經濟/財務
+        living_selfcare: 50, living_housing: 50, living_job: 50, living_learning: 50, // 生活/就業
+        social_network: 50, social_problem: 50, social_resilience: 50 // 社會/心理
+      }
+    };
+
+    const CHARACTER_ORIGINS = [
+      { key:"A", label:"A：極度匱乏", money:0,    prob:0.10, desc:"起點很硬，需善用資源。" },
+      { key:"B", label:"B：偏低",     money:2000, prob:0.30, desc:"有一點緩衝，仍要小心。" },
+      { key:"C", label:"C：一般",     money:4000, prob:0.30, desc:"一般起點，靠決策拉開差距。" },
+      { key:"D", label:"D：略高",     money:6000, prob:0.20, desc:"稍有餘裕，但別亂花。" },
+      { key:"E", label:"E：相對穩定", money:8000, prob:0.10, desc:"起點較好，目標是存更多。" },
+    ];
+
+    const JOBS = [
+      { id:"job_flyer", title:"派報/傳單", wage:190, energy:10, mood:-2, minAge:15, strictAge:false, apCost:1, desc:"走路多、溝通少。", ccsa:{living_job:5, financial_income:5}, interviews:[] },
+      { id:"job_store", title:"超商工讀", wage:185, energy:12, mood:-1, minAge:16, strictAge:false, apCost:1, desc:"結帳補貨，需耐心。", ccsa:{living_job:10, social_problem:5}, interviews:[] },
+      { id:"job_food", title:"餐飲外場", wage:190, energy:14, mood:-2, minAge:16, strictAge:false, apCost:1, desc:"走動多、服務禮貌。", ccsa:{living_job:10, social_network:5}, interviews:[] },
+      { id:"job_construction", title:"工地臨時工", wage:230, energy:18, mood:-3, minAge:18, strictAge:true, apCost:1, desc:"薪高耗體力，重工安。", ccsa:{living_job:15, social_resilience:10}, interviews:[] },
+      { id:"job_delivery", title:"外送員", wage:195, energy:15, mood:-1, minAge:18, strictAge:true, apCost:1, desc:"交通風險高。", ccsa:{living_job:10, social_problem:10}, interviews:[] },
+      { id:"job_scam", title:"輕鬆賺高薪", wage:5000, energy:5, mood:-50, minAge:15, strictAge:false, apCost:1, desc:"「幫忙轉帳」，極度可疑！", ccsa:{social_problem:-20}, interviews:[] },
+    ];
+
+    const HOUSING = [
+      { id:"house_ccsa", title:"CCSA 自立宿舍", type:"ccsa", rent:0, deposit:0, security:+15, desc:"類家庭式管理，需配合公約。", quizKey:"ccsa_interview", isCCSA:true, ccsa:{living_housing:20, social_network:15} },
+      { id:"house_rooftop", title:"頂樓加蓋", type:"rooftop", rent:4500, deposit:9000, security:-10, desc:"冬冷夏熱、違建風險。", quizKey:"house_check", isCCSA:false, ccsa:{living_housing:-5, financial_manage:5} }, 
+      { id:"house_basement", title:"地下室套房", type:"basement", rent:5000, deposit:10000, security:-5, desc:"潮濕不通風、逃生不易。", quizKey:"house_check", isCCSA:false, ccsa:{living_housing:-5} },
+      { id:"house_shared", title:"家庭式合租", type:"shared", rent:6000, deposit:12000, security:+5, desc:"共用衛浴，需磨合習慣。", quizKey:"rule_check", isCCSA:false, ccsa:{living_housing:10, social_network:10} },
+      { id:"house_studio", title:"獨立套房", type:"studio", rent:9500, deposit:19000, security:+10, desc:"隱私佳但貴。", quizKey:"contract_check", isCCSA:false, ccsa:{living_housing:15, financial_manage:-10} },
+    ];
+
+    const SHOP_ITEMS = [
+      { id:"item_bento", name:"便當", price:120, desc:"能量+3 心情+1", effect:{health:+3,mood:+1}, ageMin:15 },
+      { id:"item_b_vitamins", name:"B 群", price:180, desc:"體力 +6", effect:{health:+6}, ageMin:15 },
+      { id:"item_milktea", name:"手搖飲", price:70, desc:"心情 +4", effect:{mood:+4}, ageMin:15 },
+      { id:"item_clothes", name:"新衣", price:800, desc:"心情 +10", effect:{mood:+10}, ageMin:15 },
+      { id:"item_concert", name:"演唱會", price:1800, desc:"心情 +18", effect:{mood:+18}, ageMin:15 },
+      { id:"item_phone", name:"iPhone", price:28000, desc:"心情 +6 (貴)", effect:{mood:+6}, ageMin:15, big:true },
+      { id:"item_health_ins", name:"健保 (道具)", price:500, desc:"降低生病成本", itemGrant:"health_insurance", ageMin:15 },
+      { id:"item_acc_ins", name:"意外險 (道具)", price:650, desc:"降低意外成本", itemGrant:"accident_insurance", ageMin:15 },
+      { id:"item_credit", name:"信用卡 (道具)", price:0, desc:"18+ 開啟信用支付", itemGrant:"credit_card", ageMin:18, special:"creditCard" },
+      { id:"item_scam_stock", name:"飆股內線", price:5000, desc:"投資詐騙！", scam:true, ageMin:15 },
+    ];
+
+    const DORM_QS = [
+      { id:"d1", q:"自立宿舍與一般旅館最大的差別？", options:["沒差","宿舍是訓練場域"], a:1 },
+      { id:"d2", q:"入住自立宿舍，通常需要負擔哪些費用？", options:["完全免費","免房租，但需自付伙食/日常用品"], a:1 },
+      { id:"d3", q:"與室友發生衝突，最好的處理方式？", options:["打架","主動溝通或找生輔員"], a:1 },
+      { id:"d4", q:"對於「外宿」的規定？", options:["隨便","需提前預告或請假"], a:1 },
+      { id:"d5", q:"為了培養儲蓄習慣，宿舍通常要求？", options:["不用做","記帳或定額儲蓄"], a:1 },
+      { id:"d6", q:"公共區域清潔是誰的責任？", options:["生輔員","住民共同分擔"], a:1 },
+      { id:"d7", q:"可以隨意帶朋友回來過夜嗎？", options:["可以","不行，有門禁與訪客規定"], a:1 },
+      { id:"d8", q:"社工在宿舍的角色是？", options:["保母","指導者與資源連結者"], a:1 },
+      { id:"d9", q:"繳不出費用該怎麼辦？", options:["逃跑","主動討論財務規劃"], a:1 },
+      { id:"d10", q:"自立宿舍的最終目標？", options:["永遠住這","順利轉銜到社會"], a:1 },
+      { id:"d11", q:"宿舍內可以抽菸喝酒嗎？", options:["可以","全面禁止"], a:1 },
+      { id:"d12", q:"想養寵物可以直接帶進去嗎？", options:["可以","不行，需經評估"], a:1 },
+      { id:"d13", q:"晚上幾點後需降低音量？", options:["半夜3點","約10-11點"], a:1 },
+      { id:"d14", q:"離開房間時應該？", options:["不用管","隨手關燈關冷氣"], a:1 },
+      { id:"d15", q:"在宿舍生病了？", options:["隱瞞","告知生輔員並就醫"], a:1 },
+      { id:"d16", q:"可以複製鑰匙給朋友嗎？", options:["可以","絕對不行"], a:1 },
+      { id:"d17", q:"共用冰箱的食物？", options:["隨便放","標示名字與日期"], a:1 },
+      { id:"d18", q:"搬離宿舍通常需多久前告知？", options:["當天","一個月前"], a:1 },
+      { id:"d19", q:"在宿舍期間必須工作或就學嗎？", options:["不用","是的，需有穩定狀態"], a:1 },
+      { id:"d20", q:"遇到火災警報？", options:["搭電梯","走逃生梯"], a:1 },
+    ];
+
+    const HOUSE_QS = [
+      { id:"h1", q:"為什麼不建議租「頂樓加蓋」？", options:["視野太好","冬冷夏熱、違建風險"], a:1 },
+      { id:"h2", q:"未滿18歲簽租約？", options:["自己簽","需法定代理人同意"], a:1 },
+      { id:"h3", q:"押金最高不能超過？", options:["1個月","2個月租金"], a:1 },
+      { id:"h4", q:"如何確認隔音？", options:["看油漆","敲牆壁、看隔間材質"], a:1 },
+      { id:"h5", q:"如何確認潮濕漏水？", options:["看壁癌、水痕","看風水"], a:0 },
+      { id:"h6", q:"電費一度8元合理嗎？", options:["合理","不合理，超過台電級距"], a:1 },
+      { id:"h7", q:"獨立套房與分租套房差別？", options:["沒差","獨立門牌電表 vs 共用"], a:1 },
+      { id:"h8", q:"想在牆上釘釘子？", options:["直接釘","先徵求房東同意"], a:1 },
+      { id:"h9", q:"看房安全起見？", options:["單獨前往","找親友陪同"], a:1 },
+      { id:"h10", q:"房東要留身分證正本？", options:["好","不行，只能給影本"], a:1 },
+      { id:"h11", q:"想養寵物？", options:["偷養","事先詢問並註明合約"], a:1 },
+      { id:"h12", q:"熱水器裝哪裡最危險？", options:["陽台","密閉室內/浴室"], a:1 },
+      { id:"h13", q:"租約未到期提前搬走？", options:["沒事","屬違約，通常扣押金"], a:1 },
+      { id:"h14", q:"房東說不簽合約比較省事？", options:["好","不好，沒保障"], a:1 },
+      { id:"h15", q:"定金的作用？", options:["擔保","保留房間"], a:1 },
+      { id:"h16", q:"房東拒絕修繕設備？", options:["忍耐","催告後自行修繕並扣抵(依民法)"], a:1 },
+      { id:"h17", q:"地下室改建的房間？", options:["便宜就好","不建議，通風逃生差"], a:1 },
+      { id:"h18", q:"房東可以隨意進你房間嗎？", options:["可以","不行，涉嫌侵入住宅"], a:1 },
+      { id:"h19", q:"照片漂亮但價格低得離譜？", options:["賺到","可能是詐騙"], a:1 },
+      { id:"h20", q:"租屋糾紛找誰？", options:["警察","崔媽媽/消保官/法扶"], a:1 },
+    ];
+
+    const JOB_QS = [
+      { id:"j1", q:"試用期薪水打八折？", options:["合理","不合法，需達基本工資"], a:1 },
+      { id:"j2", q:"面試要求繳制服費/保證金？", options:["付錢","拒絕，常見詐騙"], a:1 },
+      { id:"j3", q:"工讀生需要保勞健保嗎？", options:["要，雇主須依法投保","不用"], a:0 },
+      { id:"j4", q:"發生職災老闆不賠？", options:["自認倒楣","雇主有補償責任"], a:1 },
+      { id:"j5", q:"面試要求保管身分證/存摺？", options:["配合","絕對不行"], a:1 },
+      { id:"j6", q:"勞基法正常工時？", options:["8小時","10小時"], a:0 },
+      { id:"j7", q:"加班費前兩小時怎麼算？", options:["平日工資 x 1.34","一樣"], a:0 },
+      { id:"j8", q:"工作未滿3個月離職預告？", options:["不用預告(但建議交接)","需10天"], a:0 },
+      { id:"j9", q:"遇到性騷擾？", options:["忍耐","蒐證申訴"], a:1 },
+      { id:"j10", q:"免經驗月入十萬？", options:["快去","詐騙/非法工作"], a:1 },
+      { id:"j11", q:"未滿16歲工時限制？", options:["無限制","每日8hr/晚上8點後禁工"], a:1 },
+      { id:"j12", q:"被資遣要索取什麼？", options:["非自願離職證明","薪資單"], a:0 },
+      { id:"j13", q:"遲到一分鐘扣一千？", options:["合理","不合法，比例原則"], a:1 },
+      { id:"j14", q:"國定假日上班薪水？", options:["一樣","雙倍薪資"], a:1 },
+      { id:"j15", q:"做職涯測驗去哪？", options:["就服站/台灣就業通","算命"], a:0 },
+      { id:"j16", q:"面試問隱私(有無男友)？", options:["拒絕回答","必須誠實"], a:0 },
+      { id:"j17", q:"薪資單金額有少？", options:["確認清楚","算了"], a:0 },
+      { id:"j18", q:"履歷照片？", options:["正面清晰","修圖自拍"], a:0 },
+      { id:"j19", q:"面試後沒消息？", options:["禮貌詢問","罵公司"], a:0 },
+      { id:"j20", q:"工作騎車無勞保？", options:["自己小心/遵守交通","沒差"], a:0 },
+    ];
+
+    const GENERIC_JOB_QUESTIONS = [
+      { id:"gj_legal_1", q:"老闆說「試用期」薪水要打八折，合法嗎？", options:["合法，我是新人","不合法，需達基本工資"], a:1 },
+      { id:"gj_legal_2", q:"面試要求繳「保證金」或「制服費」？", options:["付錢展現誠意","拒絕，這是求職詐騙（7不原則）"], a:1 },
+      { id:"gj_legal_3", q:"公司要求保管你的「身分證」或「存摺」？", options:["配合公司規定","絕對不行，避免淪為人頭戶"], a:1 },
+      { id:"gj_safe_1", q:"發生職業災害（工傷），老闆說是你自己不小心所以不賠？", options:["自認倒楣","不對，雇主有補償責任"], a:1 },
+      { id:"gj_general_1", q:"打卡/排班遇到問題，第一步？", options:["直接不來","向主管確認規則"], a:1 },
+    ];
+
+    const SCENARIOS = {
+      friend_loan:{ id:"friend_loan", title:"朋友借錢", body:"朋友急需用錢，想跟你借。", options:[{ label:"評估能力/約定還款", key:"safe" }, { label:"全部借他", key:"risky" }, { label:"拒絕/建議找資源", key:"refuse" }] },
+      scam_romance:{ id:"scam_romance", title:"感情詐騙", body:"網友對你很好，要求匯款或代收。", options:[{ label:"查證/拒絕金流", key:"safe" }, { label:"相信/匯款", key:"risky" }, { label:"給個資", key:"very_risky" }] },
+      scam_job:{ id:"scam_job", title:"求職詐騙", body:"保證高薪、先繳錢或交證件。", options:[{ label:"拒絕/正規求職", key:"safe" }, { label:"繳錢試試", key:"risky" }, { label:"交出網銀帳密", key:"very_risky" }] },
+      accident:{ id:"accident", title:"意外事件", body:"通勤發生擦撞，需處理醫療。", options:[{ label:"按程序/休息", key:"handle" }, { label:"硬撐", key:"ignore" }] },
+      sickness:{ id:"sickness", title:"生病了", body:"身體不適，需要休息。", options:[{ label:"就醫", key:"rest" }, { label:"硬撐", key:"ignore" }] },
+      police:{ id:"police", title:"警察臨檢", body:"夜間臨檢，配合身分查驗。", options:[{ label:"冷靜配合", key:"cooperate" }, { label:"情緒失控", key:"panic" }] },
+    };
+    
+    // Quiz Map
+    const QUIZ_DB = {
+      password_setup: { title:"手機密碼", pickOne:true, questions:[{ id:"pw1", q:"設定密碼？", options:["123456","2FA+強密碼"], a:1 }] },
+      
+      // Job Center uses JOB_QS
+      job_test: { title:"就業服務站測驗", pickOne:false, questions: JOB_QS },
+      
+      // Welfare uses mixed
+      welfare_life: { title:"社福中心：生活支持", pickOne:false, questions: HOUSE_QS.slice(0,10) }, 
+      welfare_emergency: { title:"社福中心：急難補助", pickOne:false, questions:[{id:"em1", q:"急難補助用途？", options:["買手機","生活陷困"], a:1}, ...JOB_QS.slice(0,5)] },
+      
+      // CCSA
+      ccsa_aid: { title:"CCSA：經濟支持", pickOne:false, questions: DORM_QS.slice(0,5) },
+      ccsa_accompany: { title:"CCSA：申請陪同", pickOne:false, questions: DORM_QS.slice(5,10) },
+      ccsa_counseling: { title:"CCSA：心理諮商", pickOne:false, questions: DORM_QS.slice(10,15) },
+      ccsa_training: { title:"CCSA：自立培訓", pickOne:false, questions: JOB_QS.slice(10,15) },
+      ccsa_interview: { title:"CCSA 宿舍面談", pickOne:false, questions: DORM_QS },
+      
+      // Housing Check
+      house_check: { title:"看房檢核", pickOne:false, questions: HOUSE_QS },
+      contract_check: { title:"簽約檢查", pickOne:false, questions: HOUSE_QS.slice(10,20) }, 
+      rule_check: { title:"合租協議", pickOne:false, questions: DORM_QS.slice(0,5) },
+    };
+
+    /***********************
+     * Components
+     ***********************/
+    function IconWrapper({ children, className }){ return <svg viewBox="0 0 24 24" className={"w-6 h-6 " + (className||"")} fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">{children}</svg>; }
+    function IconHome(){ return <IconWrapper><path d="M3 10.5 12 3l9 7.5"/><path d="M5 10v10h14V10"/></IconWrapper>; }
+    function IconHouse(){ return <IconWrapper><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-6h4v6"/></IconWrapper>; }
+    function IconBriefcase(){ return <IconWrapper><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></IconWrapper>; }
+    function IconMap(){ return <IconWrapper><path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z"/><path d="M9 3v15"/><path d="M15 6v15"/></IconWrapper>; }
+    function IconWallet(){ return <IconWrapper><path d="M20 8V6a2 2 0 0 0-2-2H6a3 3 0 0 0 0 6h12a2 2 0 0 1 2 2v2"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M16 14h2"/></IconWrapper>; }
+    function IconSpinner({className}){ return <IconWrapper className={className}><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></IconWrapper>; }
+
+    function StatPill({ label, value, colorClass }){
+      return (
+        <div className="bg-white border-2 border-black rounded-lg px-2 py-1 flex-1 min-w-[70px] shadow-[2px_2px_0_#000]">
+          <div className="flex justify-between items-end">
+            <div className="font-pixel text-lg leading-none">{label}</div>
+            <div className="font-pixel text-xl leading-none">{value}</div>
+          </div>
+          <div className="mt-1 h-2 w-full bg-slate-200 rounded-full border border-black overflow-hidden">
+            <div className={"h-full " + colorClass} style={{width: clamp(value,0,100) + "%"}}></div>
+          </div>
+        </div>
+      );
+    }
+
+    function StatBar({ state, livingCost }){
+      return (
+        <div className="p-3 sticky top-0 z-10">
+          <div className="bg-white border-2 border-black rounded-xl p-3 shadow-[4px_4px_0_#000]">
+            <div className="flex justify-between items-center">
+              <div className="font-pixel text-2xl">W{state.week}/{state.maxWeeks} <span className="text-sm font-sans text-slate-500">(-${livingCost})</span></div>
+              <div className="flex gap-1">{[...Array(state.maxAp)].map((_,i) => <div key={i} className={"w-3 h-3 border border-black rounded-full " + (i<state.ap?"bg-yellow-400":"bg-slate-200")}></div>)}</div>
+            </div>
+            <div className="mt-2 flex gap-2">
+              <StatPill label="體力" value={state.health} colorClass="bg-emerald-400" />
+              <StatPill label="心情" value={state.mood} colorClass="bg-yellow-400" />
+              <StatPill label="資安" value={state.security} colorClass="bg-sky-400" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function AppIcon({ label, onClick, color, Icon }){
+      return (
+        <button onClick={onClick} className={"w-full p-4 flex items-center justify-between border-2 border-black rounded-xl shadow-[4px_4px_0_#000] active:translate-x-1 active:translate-y-1 active:shadow-[2px_2px_0_#000] transition-all " + color}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white border-2 border-black rounded-lg flex items-center justify-center"><Icon/></div>
+            <div className="text-left">
+              <div className="font-pixel text-2xl leading-none">{label}</div>
+              <div className="text-xs text-slate-800 mt-1">點擊進入</div>
+            </div>
+          </div>
+          <div className="font-pixel text-2xl">&rarr;</div>
+        </button>
+      );
+    }
+
+    function ModalWrapper({ title, children, onClose, footer, headerColor="bg-white", headerText="text-black" }){
+      return (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-h-[85%] flex flex-col bg-white border-2 border-black rounded-xl shadow-[6px_6px_0_#000] overflow-hidden animate-[modalPop_0.2s_ease-out]">
+            <div className={`p-3 border-b-2 border-black flex justify-between items-center ${headerColor}`}>
+              <h2 className={`font-pixel text-2xl ${headerText}`}>{title}</h2>
+              <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-white border-2 border-black rounded shadow-[2px_2px_0_#000] active:shadow-none active:translate-y-1">X</button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1 text-sm leading-relaxed whitespace-pre-wrap">{children}</div>
+            {footer && <div className="p-3 border-t-2 border-black bg-slate-50">{footer}</div>}
+          </div>
+        </div>
+      );
+    }
+
+    // Result Radar Chart Component
+    function ResultRadar({ stats }) {
+      const chartRef = useRef(null);
+      useEffect(() => {
+        if (chartRef.current) {
+          const ctx = chartRef.current.getContext('2d');
+          new Chart(ctx, {
+            type: 'radar',
+            data: {
+              labels: ['經濟能力', '財務管理', '自理生活', '住所穩定', '就業能力', '學習能力', '關係網絡', '問題解決', '心理能量'],
+              datasets: [{
+                label: '自立能力指標',
+                data: [
+                  stats.financial_income, stats.financial_manage,
+                  stats.living_selfcare, stats.living_housing, stats.living_job, stats.living_learning,
+                  stats.social_network, stats.social_problem, stats.social_resilience
+                ],
+                backgroundColor: 'rgba(59, 130, 246, 0.4)', // Slightly transparent blue
+                borderColor: '#1d4ed8', // Darker blue
+                borderWidth: 2,
+                pointBackgroundColor: '#1d4ed8',
+                pointBorderColor: '#fff',
+                pointRadius: 4,
+                pointHoverRadius: 6
+              }]
+            },
+            options: {
+              scales: { 
+                r: { 
+                  suggestedMin: 0, 
+                  suggestedMax: 100, 
+                  ticks: { 
+                    stepSize: 20, 
+                    display: false // Clean look
+                  },
+                  grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                  pointLabels: {
+                    font: {
+                      family: "'Noto Sans TC', sans-serif",
+                      size: 14, // Larger font
+                      weight: 'bold'
+                    },
+                    color: '#333'
+                  },
+                  angleLines: { color: 'rgba(0, 0, 0, 0.2)' }
+                } 
+              },
+              plugins: { 
+                legend: { display: false } 
+              },
+              maintainAspectRatio: false
+            }
+          });
+        }
+      }, []);
+      return <div className="relative w-full h-64"><canvas ref={chartRef}></canvas></div>;
+    }
+
+    /***********************
+     * Main App
+     ***********************/
+    function App(){
+      const screenRef = useRef(null); 
+      const [state, setState] = useState(() => ({ ...INITIAL_STATS, bills:[], logs:[], inventory:{}, ledger:[], missions:{}, achievements:{} }));
+      const [route, setRoute] = useState("start");
+      const [modal, setModal] = useState(null);
+      const [floats, setFloats] = useState([]);
+      const [spinning, setSpinning] = useState(false); // Wheel state
+      
+      const currentHouse = useMemo(() => HOUSING.find(h => h.id === state.houseId) || null, [state.houseId]);
+      const livingCost = useMemo(() => calcLivingCost(state, currentHouse), [state, currentHouse]);
+
+      const pushLog = (text) => setState(s => ({...s, logs:[{id:uid(), text:`[W${s.week}] ${text}`}, ...s.logs].slice(0,30)}));
+      const addFloat = (kind, text) => {
+        const id=uid(); setFloats(p=>[...p,{id,kind,text,x:50+Math.random()*200,y:100+Math.random()*100}]);
+        setTimeout(()=>setFloats(p=>p.filter(f=>f.id!==id)),900);
+      };
+      const spendAP = (cost=1) => {
+        if(state.ap<cost){ addFloat("bad","AP不足"); return false; }
+        setState(s=>({...s, ap:s.ap-cost})); return true;
+      };
+      const changeState = (fn, float) => {
+        setState(prev => {
+          const next = fn(prev);
+          if(float) addFloat(float.kind, float.text);
+          return next;
+        });
+      };
+
+      const grantAchievement = (tag) => setState(s => (s.achievements[tag] ? s : { ...s, achievements: { ...s.achievements, [tag]: true } }));
+      const grantMission = (key) => setState(s => (s.missions[key] ? s : { ...s, missions: { ...s.missions, [key]: true } }));
+
+      // Events
+      const triggerRandomEvent = () => {
+        if(Math.random()>0.6) return;
+        const pool = Object.values(SCENARIOS);
+        const ev = pool[Math.floor(Math.random()*pool.length)];
+        setModal({ type:"event", event:ev });
+      };
+
+      // Define ALL logic functions FIRST
+      const resolveResourceQuiz = (passed, actionKey) => {
+        setModal(null);
+        if(!passed){
+          changeState(s => ({...s, mood: clamp(s.mood-6,0,100)}), {kind:"warn", text:"心情 -6"});
+          pushLog("測驗未通過：請回想「自立」的關鍵概念。");
+          return;
+        }
+
+        if(actionKey === "job_test"){
+          changeState(s => applyDelta(s, {money:1000, mood:2, ccsa:{living_job:10}}), {kind:"ok", text:"$1000 心情+2"});
+          pushLog("職場測驗通過：獲得獎勵金 1000 元。");
+          grantAchievement("求職加速器");
+        }
+        else if(actionKey === "welfare_life"){
+          changeState(s => applyDelta(s, {health:20, ccsa:{living_selfcare:10}}), {kind:"ok", text:"體力 +20"});
+          pushLog("生活支持申請成功：體力恢復。");
+          grantAchievement("善用資源");
+        }
+        else if(actionKey === "welfare_emergency"){
+          changeState(s => applyDelta(s, {money:5000, ccsa:{financial_income:10}}), {kind:"ok", text:"$5000"});
+          pushLog("急難補助核發：獲得 5000 元。");
+          grantAchievement("度過難關");
+        }
+        else if(actionKey === "ccsa_aid"){
+          changeState(s => applyDelta(s, {money:3000, ccsa:{financial_income:10}}), {kind:"ok", text:"$3000"});
+          pushLog("CCSA 經濟支持：獲得 3000 元。");
+          grantAchievement("得到幫助");
+        }
+        else if(actionKey === "ccsa_accompany"){
+          changeState(s => ({...s, inventory:{...s.inventory, accompaniment_card:true}, ccsaStats:{...s.ccsaStats, social_network:clamp(s.ccsaStats.social_network+15,0,100)}}), {kind:"ok", text:"獲得陪同卡"});
+          pushLog("申請成功：獲得「社工陪同卡」。");
+          grantAchievement("懂得求助");
+        }
+        else if(actionKey === "ccsa_counseling"){
+          changeState(s => applyDelta(s, {mood:30, health:10, ccsa:{social_resilience:15}}), {kind:"ok", text:"心情+30 體力+10"});
+          pushLog("諮商結束：身心狀態大幅恢復。");
+          grantAchievement("情緒照顧");
+        }
+        else if(actionKey === "ccsa_training"){
+          changeState(s => {
+            const nextMax = clamp(s.maxAp+1,1,9);
+            return applyDelta({...s, maxAp:nextMax, ap:clamp(s.ap+1,0,nextMax)}, {ccsa:{living_learning:15}});
+          }, {kind:"ok", text:"行動力升級"});
+          pushLog("自立培訓完成：AP 上限 +1。");
+          grantAchievement("提升行動力");
+        }
+        grantMission("usedResources");
+      };
+
+      const resolveEvent = (eventKey, choiceKey) => {
+        setModal(null);
+        const ev = SCENARIOS[eventKey];
+        if(!ev) return;
+
+        if(eventKey === "friend_loan"){
+          if(choiceKey === "safe"){
+            const loss = Math.min(500, Math.max(0, Math.floor(state.money*0.12)));
+            changeState(s => applyDelta(s, {money:-loss, mood:-1, ccsa:{social_network:5}}), {kind:"warn", text:`借出 ${loss}`});
+            pushLog(`借出少量錢：損失 ${loss}。`);
+            grantAchievement("善用界線");
+          }else if(choiceKey === "risky"){
+            const loss = Math.min(2000, Math.max(800, Math.floor(state.money*0.35)));
+            changeState(s => applyDelta(s, {money:-loss, mood:-8, ccsa:{social_problem:-5}}), {kind:"bad", text:`損失 ${loss}`});
+            pushLog(`借出大筆錢：損失 ${loss}。`);
+          }else{
+            changeState(s => applyDelta(s, {mood:1, ccsa:{social_problem:5}}), {kind:"ok", text:"拒絕成功"});
+            pushLog("婉拒借款。");
+            grantAchievement("拒絕高手");
+          }
+        }
+        else if(eventKey === "scam_job" || eventKey === "scam_romance"){
+           if(choiceKey === "safe") {
+             changeState(s => applyDelta(s, {security:3, ccsa:{social_problem:10}}), {kind:"ok", text:"識破詐騙"});
+             pushLog("成功識破詐騙！");
+             grantAchievement("防詐雷達");
+           } else if (choiceKey === "very_risky") {
+             changeState(s => applyDelta(s, {money:-state.money, mood:-20, security:-20, ccsa:{social_problem:-20}}), {kind:"bad", text:"資產歸零"});
+             pushLog("慘遭詐騙，帳戶歸零。");
+           } else {
+             changeState(s => applyDelta(s, {money:-2000, mood:-10, security:-5}), {kind:"bad", text:"損失 2000"});
+             pushLog("遭詐騙損失金錢。");
+           }
+        }
+        else if(eventKey === "accident" || eventKey === "sickness"){
+           const hasIns = eventKey==="accident" ? state.inventory.accident_insurance : state.inventory.health_insurance;
+           if(choiceKey === "handle" || choiceKey === "rest"){
+             if(hasIns){
+               changeState(s => applyDelta(s, {health:5, mood:2, money:-200}), {kind:"ok", text:"保險理賠"});
+               pushLog("有保險協助，負擔大幅減輕。");
+             } else {
+               changeState(s => applyDelta(s, {health:5, money:-1500}), {kind:"warn", text:"醫療費 -1500"});
+               pushLog("無保險，需全額負擔醫療費。");
+             }
+           } else {
+             changeState(s => applyDelta(s, {health:-20, mood:-10}), {kind:"bad", text:"病情惡化"});
+             pushLog("選擇硬撐，導致身體狀況惡化。");
+           }
+        }
+        else if(eventKey === "police"){
+           if(choiceKey === "cooperate"){
+             if(state.inventory.good_citizen_card){
+               changeState(s => applyDelta(s, {mood:5}), {kind:"ok", text:"良民證通過"});
+               pushLog("出示良民證，快速通關。");
+             } else {
+               changeState(s => applyDelta(s, {mood:-5}), {kind:"warn", text:"盤查許久"});
+               pushLog("配合盤查，但花了不少時間。");
+             }
+           } else {
+             changeState(s => applyDelta(s, {mood:-20, security:-10}), {kind:"bad", text:"衝突"});
+             pushLog("與警方發生衝突，被帶回警局。");
+           }
+        }
+      };
+
+      const resolveJobQuiz = (passed, job) => {
+        setModal(null);
+        if(passed){
+          const income = job.wage * 8;
+          changeState(s => applyDelta(s, {money:income, health:-job.energy, mood:job.mood, ccsa:job.ccsa}), {kind:"ok", text:`+${income}`});
+          pushLog(`工作完成：收入 ${income}`);
+          grantMission("stableWork");
+          grantAchievement("穩定打工人");
+        } else {
+          changeState(s => applyDelta(s, {mood:-10}), {kind:"bad", text:"面試失敗"});
+          pushLog("面試未通過。");
+        }
+      };
+
+      const resolveHouseQuiz = (passed, house) => {
+        setModal(null);
+        if(passed){
+          changeState(s => ({...applyDelta(s, {money:-house.deposit, security:house.security, ccsa:house.ccsa}), hasHouse:true, houseName:house.title, houseId:house.id}), {kind:"ok", text:"簽約成功"});
+          pushLog(`入住：${house.title}`);
+          grantMission("stableHousing");
+          grantAchievement(house.isCCSA?"住進支持系統":"有殼蝸牛");
+        } else {
+          changeState(s => applyDelta(s, {mood:-6}), {kind:"bad", text:"簽約失敗"});
+          pushLog("看房檢核未通過。");
+        }
+      };
+
+      const purchase = (item, method) => {
+        if(item.special === "creditCard"){
+          if(state.age<18) { addFloat("warn","18+"); return; }
+          changeState(s=>({...s, inventory:{...s.inventory, credit_card:true}}), {kind:"ok", text:"信用卡"});
+          setModal(null); return;
+        }
+        if(item.scam) {
+          changeState(s=>applyDelta(s, {money:-item.price, mood:-25, ccsa:{financial_manage:-10}}), {kind:"bad", text:"詐騙!"});
+          pushLog(`購買 ${item.name} 遭詐騙。`);
+          setModal(null); return;
+        }
+        if(method==="cash"){
+          // Safety: spread undefined property is valid in object literal, but ...item.effect||{} is safer
+          changeState(s=>applyDelta(s, {money:-item.price, ...(item.effect||{}), ccsa:{financial_manage:5}}), {kind:"ok", text:"購買成功"});
+        }
+        setModal(null);
+      };
+
+      const advanceWeek = () => {
+        if(state.week > state.maxWeeks){ setModal({type:"ending"}); return; }
+        
+        let next = {...state};
+        let cost = calcLivingCost(next, currentHouse);
+        
+        next.bills.forEach(b => { cost += b.amount; b.remainingWeeks--; });
+        next.bills = next.bills.filter(b => b.remainingWeeks > 0);
+        next.money -= cost;
+        next.week++;
+        next.ap = next.maxAp;
+        next.mood = clamp(next.mood-5,0,100);
+        
+        if(next.money < 0 && next.hasHouse && !currentHouse?.isCCSA){
+          next.hasHouse = false; next.houseId=""; next.mood-=20;
+          pushLog("積欠房租被迫搬離！");
+        }
+        
+        pushLog(`週結算：支出 ${cost}`);
+        setState(next);
+        
+        if(next.week > next.maxWeeks) setTimeout(()=>setModal({type:"ending"}),500);
+        else setTimeout(triggerRandomEvent, 800);
+      };
+
+      const spinWheel = () => {
+        setSpinning(true);
+        setTimeout(() => {
+          const pick = CHARACTER_ORIGINS[Math.floor(Math.random()*CHARACTER_ORIGINS.length)];
+          const age = 15 + Math.floor(Math.random()*5);
+          changeState(s=>({...s, money:pick.money, age, origin:pick}));
+          pushLog(`開局：${pick.label}, ${pick.money}元, ${age}歲`);
+          setSpinning(false);
+          setRoute("home");
+        }, 1500);
+      };
+
+      const calcEnding = () => {
+        const moneyOk = state.money > 0;
+        const taskCount = Object.values(state.missions).filter(Boolean).length;
+        const pass = (state.week > state.maxWeeks) && moneyOk && taskCount >= 2;
+        let title = "努力生存的新人";
+        if(state.money < 0) title = "負債累累的倖存者";
+        else if(state.money >= 8000 && state.hasHouse) title = "自立模範生";
+        
+        const c = state.ccsaStats;
+        let feedback = "【總結回饋】\n";
+        
+        // Critical Financial Check: Debt overrides high stats
+        if (state.money < 0) {
+            feedback += "⚠ 財務警示：雖然你可能具備理財知識，但目前處於「負債」狀態。這提醒我們：知識與執行之間存在落差，請務必檢視開銷或意外風險。\n";
+        } else if (c.financial_manage < 60) {
+            feedback += "⚠ 財務管理：建議養成記帳習慣，區分「想要」與「需要」。\n";
+        } else {
+            feedback += "✅ 財務管理：你的金錢觀念很棒，懂得未雨綢繆！\n";
+        }
+        
+        if (c.living_housing < 60) feedback += "⚠ 住所穩定：租屋安全知識需加強，避免選擇危險的環境。\n";
+        
+        if (c.social_network < 60 && c.social_problem < 60) feedback += "⚠ 資源連結：遇到困難時習慣獨自承受，記得還有社工與政府資源可以幫忙。\n";
+        else feedback += "✅ 問題解決：遇到危機時懂得求助與運用資源，這是自立最重要的能力！\n";
+
+        feedback += "\n這一路走來不容易，請給自己一個掌聲！真實的自立路上，CCSA 永遠支持你。";
+
+        return { pass, title, feedback };
+      };
+
+      // --- Helper for quiz modal content ---
+      const QuizContent = ({ title, questions, onPass, onClose }) => {
+        const [ans, setAns] = useState({});
+        const submit = () => {
+          const pass = questions.every(q => ans[q.id] === q.a);
+          if(pass) { onPass(); onClose(); }
+          else { addFloat("bad","測驗失敗"); onClose(); changeState(s=>({...s, mood:s.mood-5})); }
+        };
+        return (
+          <div className="space-y-4">
+            {questions.map((q,i) => (
+              <div key={q.id} className="bg-slate-50 p-3 rounded border border-gray-300">
+                <div className="font-bold mb-2">{i+1}. {q.q}</div>
+                {q.options.map((o,idx)=>(
+                  <button key={idx} onClick={()=>setAns(p=>({...p, [q.id]:idx}))}
+                    className={`block w-full text-left p-2 rounded mb-1 ${ans[q.id]===idx?"bg-black text-white":"bg-white border border-gray-300"}`}>
+                    {o}
+                  </button>
+                ))}
+              </div>
+            ))}
+            <button onClick={submit} className="w-full neo-btn bg-green-400 py-3 font-bold text-xl">送出答案</button>
+          </div>
+        );
+      };
+
+      // --- Renderers ---
+      const renderStart = () => (
+        <div className="p-6 flex flex-col items-center justify-center h-full">
+          <div className="font-pixel text-5xl mb-4">自立大冒險</div>
+          <div className="text-center mb-8">8週生存挑戰：租屋、求職、防詐騙</div>
+          
+          {/* Wheel Visual */}
+          <div className={`wheel-container mb-6 ${spinning ? "animate-spin-fast" : ""}`}>
+             <div className="wheel-pointer"></div>
+             <div className="wheel-disc"></div>
+             <div className="wheel-center"></div>
+          </div>
+
+          <button className="neo-btn bg-amber-300 px-6 py-4 font-pixel text-3xl w-full shadow-[4px_4px_0_#000]" 
+            onClick={spinWheel} disabled={spinning}>
+            {spinning ? "轉動中..." : "啟動命運轉盤"}
+          </button>
+        </div>
+      );
+
+      const renderHome = () => (
+        <div className="p-4 space-y-4">
+          <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_#000]">
+            <div className="flex justify-between items-end">
+              <div>
+                <div className="text-sm text-slate-500">現有資金</div>
+                <div className="font-pixel text-4xl text-emerald-600">${state.money}</div>
+              </div>
+              <div className="text-right text-sm">
+                <div>年齡: {state.age}</div>
+                <div>{state.hasHouse?"🏠有房":"⛺流浪中"}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <AppIcon label="好屋租房" color="bg-orange-100" Icon={IconHouse} onClick={()=>setRoute("app_house")} />
+            <AppIcon label="人力銀行" color="bg-blue-100" Icon={IconBriefcase} onClick={()=>setRoute("app_job")} />
+            <AppIcon label="資源地圖" color="bg-emerald-100" Icon={IconMap} onClick={()=>setRoute("app_resource")} />
+            <AppIcon label="財務管家" color="bg-violet-100" Icon={IconWallet} onClick={()=>setModal({type:"shop"})} />
+          </div>
+
+          <button onClick={advanceWeek} className="w-full py-4 bg-slate-800 text-white border-2 border-black rounded-xl font-pixel text-2xl shadow-[4px_4px_0_#000] active:translate-y-1 active:shadow-none">
+            {state.ap===0 ? "休息 (下週)" : "結束本週"}
+          </button>
+
+          <div className="bg-black text-green-400 p-3 rounded-xl font-mono text-xs h-32 overflow-y-auto border-2 border-gray-600">
+            {state.logs.map(l=><div key={l.id}>{l.text}</div>)}
+          </div>
+        </div>
+      );
+
+      const renderHouseApp = () => (
+        <div className="h-full flex flex-col bg-gray-100">
+          <div className="style-591-header p-4 shadow-md flex items-center gap-3 border-b border-orange-600 sticky top-0 z-20">
+            <button onClick={()=>setRoute("home")} className="bg-white text-orange-500 px-3 py-1 rounded font-bold">← 返回</button>
+            <h2 className="font-bold text-xl text-white tracking-wide">好屋租房網</h2>
+          </div>
+          <div className="p-3 space-y-3 overflow-y-auto flex-1">
+            <div className="bg-orange-50 p-2 text-xs text-orange-700 border border-orange-200 rounded">
+              💡 提示：預約看房需消耗 1 AP，並通過安全檢核測驗。
+            </div>
+            {HOUSING.map(h => (
+              <div key={h.id} className="bg-white p-3 border border-gray-300 rounded shadow-sm flex flex-col gap-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">{h.title}</h3>
+                    <div className="text-xs text-gray-500 mt-1">{h.desc}</div>
+                  </div>
+                  <div className="font-bold text-xl text-591 text-[#ff8000]">${h.rent}<span className="text-xs text-gray-500">/月</span></div>
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <span className="bg-gray-100 px-2 py-1 rounded text-gray-600">押金 ${h.deposit}</span>
+                  <span className={"px-2 py-1 rounded " + (h.security>0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>
+                    資安 {h.security>0?"+":""}{h.security}
+                  </span>
+                  {h.isCCSA && <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">社福資源</span>}
+                </div>
+                <button 
+                  disabled={state.hasHouse}
+                  onClick={() => {
+                    if(!spendAP(1)) return;
+                    if(state.age<18 && !state.inventory.accompaniment_card && !h.isCCSA) { pushLog("需社工陪同"); addFloat("warn","未成年限制"); return; }
+                    const q = QUIZ_DB[h.quizKey];
+                    const qs = shuffleArray(q.questions).slice(0,3);
+                    setModal({ type:"quiz", title:`看房檢核：${h.title}`, questions:qs, onPass:()=>resolveHouseQuiz(true, h) });
+                  }}
+                  className={"w-full py-2 rounded font-bold text-white " + (state.hasHouse ? "bg-gray-400" : "bg-[#ff8000] active:bg-orange-600")}
+                >
+                  {state.hasHouse ? "已入住" : "預約看房 (1 AP)"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+      const renderJobApp = () => (
+        <div className="h-full flex flex-col bg-white">
+          <div className="style-job-header p-4 shadow-md flex items-center gap-3 sticky top-0 z-20">
+            <button onClick={()=>setRoute("home")} className="bg-white text-[#0066cc] px-3 py-1 rounded font-bold">← 返回</button>
+            <h2 className="font-bold text-xl text-white">台灣就業通</h2>
+          </div>
+          <div className="p-4 space-y-4 overflow-y-auto flex-1">
+            <div className="bg-blue-50 p-3 rounded text-sm text-blue-800 border border-blue-200">
+              勞動部提醒：求職防騙 7 不原則。不繳錢、不購買、不辦卡、不簽約、不離身、不飲用、不非法工作。
+            </div>
+            {JOBS.map(job => {
+              const ageOK = state.age >= job.minAge;
+              return (
+                <div key={job.id} className="border-b border-gray-200 pb-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-bold text-[#0066cc]">{job.title}</h3>
+                    <span className="text-red-600 font-bold">${job.wage}/時</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{job.desc}</p>
+                  <div className="flex gap-2 text-xs mb-3">
+                    <span className="bg-gray-100 px-2 py-1 rounded">體力 -{job.energy}</span>
+                    <span className="bg-gray-100 px-2 py-1 rounded">AP -{job.apCost}</span>
+                    {!ageOK && <span className="bg-red-100 text-red-600 px-2 py-1 rounded">需年滿 {job.minAge}</span>}
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if(!spendAP(job.apCost)) return;
+                      if(!ageOK && !state.inventory.accompaniment_card) { addFloat("warn","年齡不符"); return; }
+                      // Fix: Provide default empty array to avoid spread error if interviews is missing
+                      const interviews = job.interviews || [];
+                      const qs = shuffleArray([...interviews, ...GENERIC_JOB_QUESTIONS]).slice(0,3);
+                      setModal({ type:"quiz", title:`面試：${job.title}`, questions:qs, onPass:()=>resolveJobQuiz(true, job) });
+                    }}
+                    className="border border-[#0066cc] text-[#0066cc] hover:bg-[#0066cc] hover:text-white transition w-full py-2 rounded"
+                  >
+                    我要應徵
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+
+      const renderResourceApp = () => (
+        <div className="p-4 space-y-3 bg-emerald-50 h-full overflow-y-auto">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="font-pixel text-3xl">資源地圖</h2>
+            <button onClick={()=>setRoute("home")} className="neo-btn bg-white px-3 py-1">返回</button>
+          </div>
+          {[
+            {id:"job_test", title:"就業服務站", desc:"職場測驗 +$1000", bg:"bg-sky-200"},
+            {id:"welfare_life", title:"社福中心-生活", desc:"生活支持 (體力+20)", bg:"bg-amber-200"},
+            {id:"welfare_emergency", title:"社福中心-急難", desc:"急難補助 (存款<2000)", bg:"bg-amber-300"},
+            {id:"ccsa_aid", title:"CCSA 經濟支持", desc:"經濟支持 +$3000", bg:"bg-emerald-200"},
+            {id:"ccsa_accompany", title:"CCSA 申請陪同", desc:"獲得陪同卡 (未成年必備)", bg:"bg-emerald-300"},
+            {id:"ccsa_counseling", title:"CCSA 諮商", desc:"心情+30 體力+10", bg:"bg-emerald-100"},
+            {id:"ccsa_training", title:"CCSA 自立培訓", desc:"行動力升級 (maxAp+1)", bg:"bg-emerald-400"},
+            {id:"good_citizen", title:"警察局", desc:"申請良民證 (18+)", bg:"bg-slate-200"}
+          ].map(r => (
+            <button key={r.id} className={`w-full p-4 text-left border-2 border-black rounded-xl shadow-[4px_4px_0_#000] ${r.bg}`}
+              onClick={()=>{
+                if(r.id==="good_citizen" && state.age<18) { addFloat("warn","需 18+"); return; }
+                if(r.id==="good_citizen" && state.inventory.good_citizen_card) { addFloat("warn","已持有"); return; }
+                
+                if(r.id==="welfare_emergency" && state.money>=2000) { addFloat("warn","資格不符"); return; }
+                
+                if(r.id==="good_citizen") {
+                   changeState(s=>({...s, inventory:{...s.inventory, good_citizen_card:true}}), {kind:"ok",text:"獲得良民證"});
+                   pushLog("申請成功：獲得良民證");
+                   return;
+                }
+
+                const q = QUIZ_DB[r.id];
+                if(q) {
+                  const qs = shuffleArray(q.questions).slice(0,3);
+                  const finalQs = qs.length > 0 ? qs : q.questions;
+                  setModal({ 
+                    type:"quiz", 
+                    title:q.title, 
+                    questions:finalQs, 
+                    onPass:()=>resolveResourceQuiz(true, r.id) 
+                  });
+                }
+              }}>
+              <div className="font-bold text-xl">{r.title}</div>
+              <div className="text-sm">{r.desc}</div>
+            </button>
+          ))}
+        </div>
+      );
+
+      const renderEnding = () => {
+        const end = calcEnding();
+        return (
+          <div className="p-4 space-y-4 h-full overflow-y-auto bg-white">
+            <div className={`p-4 border-2 border-black rounded-xl text-center ${end.pass?"bg-yellow-200":"bg-gray-200"}`}>
+              <h1 className="font-pixel text-4xl mb-2">{end.pass?"恭喜通關":"再接再厲"}</h1>
+              <div className="text-xl font-bold">{end.title}</div>
+              <div className="text-sm mt-1">最終存款: ${state.money}</div>
+            </div>
+            
+            <div className="bg-white p-2 border-2 border-black rounded-xl">
+              <ResultRadar stats={state.ccsaStats} />
+            </div>
+
+            <div className="bg-blue-50 p-4 border-2 border-blue-200 rounded-xl text-sm whitespace-pre-wrap leading-relaxed">
+              {end.feedback}
+            </div>
+
+            <button onClick={()=>window.location.reload()} className="w-full neo-btn bg-black text-white py-4 font-pixel text-2xl">
+              重新挑戰
+            </button>
+          </div>
+        );
+      };
+
+      // --- Main Render Return ---
+      if(modal?.type === "ending") return renderEnding();
+
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="phone-shell">
+            <div className="side-btn b1"></div><div className="side-btn b2"></div><div className="side-btn r1"></div>
+            <div ref={screenRef} className={"screen scanlines relative flex flex-col " + (state.mood<30?"glitch-effect":"")}>
+              {route!=="home" && route!=="start" && <StatBar state={state} livingCost={livingCost} />}
+              <div className="flex-1 overflow-y-auto content-scroll">
+                {route==="start" && renderStart()}
+                {route==="home" && renderHome()}
+                {route==="app_house" && renderHouseApp()}
+                {route==="app_job" && renderJobApp()}
+                {route==="app_resource" && renderResourceApp()}
+              </div>
+              
+              <div className="pointer-events-none absolute inset-0 z-50">
+                {floats.map(f=><div key={f.id} style={{left:f.x, top:f.y}} className={`absolute font-pixel text-4xl font-bold text-stroke ${f.kind==="ok"?"text-green-400":"text-red-500"}`}>{f.text}</div>)}
+              </div>
+
+              {modal && <ModalWrapper title={modal.title||"系統通知"} onClose={()=>setModal(null)} 
+                footer={modal.type==="event" && <div className="space-y-2">{modal.event.options.map(o=><button key={o.key} className="w-full neo-btn bg-white py-2" onClick={()=>{resolveEvent(modal.event.id,o.key);}}>{o.label}</button>)}</div>}>
+                {modal.type==="quiz" ? <QuizContent {...modal} onClose={()=>setModal(null)} /> : 
+                 modal.type==="shop" ? <div className="grid grid-cols-1 gap-2">{SHOP_ITEMS.map(i=><button key={i.id} onClick={()=>purchase(i,"cash")} className="neo-soft p-2 flex justify-between"><span>{i.name}</span><span>${i.price}</span></button>)}</div> :
+                 modal.type==="event" ? modal.event.body : null}
+              </ModalWrapper>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
