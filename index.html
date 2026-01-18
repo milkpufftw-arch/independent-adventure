@@ -222,6 +222,9 @@
       { id:"item_scam_stock", name:"飆股內線", price:5000, desc:"投資詐騙！", scam:true, ageMin:15 },
     ];
 
+    // --- Separate Question Sets for Each Resource/Category ---
+    
+    // 1. Dormitory (Housing) Questions
     const DORM_QS = [
       { id:"d1", q:"自立宿舍與一般旅館最大的差別？", options:["沒差","宿舍是訓練場域"], a:1 },
       { id:"d2", q:"入住自立宿舍，通常需要負擔哪些費用？", options:["完全免費","免房租，但需自付伙食/日常用品"], a:1 },
@@ -243,6 +246,47 @@
       { id:"d18", q:"搬離宿舍通常需多久前告知？", options:["當天","一個月前"], a:1 },
       { id:"d19", q:"在宿舍期間必須工作或就學嗎？", options:["不用","是的，需有穩定狀態"], a:1 },
       { id:"d20", q:"遇到火災警報？", options:["搭電梯","走逃生梯"], a:1 },
+    ];
+
+    // 2. Accompaniment Questions
+    const ACCOMPANY_QS = [
+      { id:"ac1", q:"未滿18歲租屋簽約，為何需要陪同？", options:["法律效力考量與保護你","因為好玩"], a:0 },
+      { id:"ac2", q:"申請「社工陪同」的主要目的？", options:["幫我付錢","協助檢視合約與安全"], a:1 },
+      { id:"ac3", q:"持有「陪同卡」去應徵工作，代表？", options:["我有靠山可以偷懶","我有社工支持系統協助"], a:1 },
+      { id:"ac4", q:"陪同卡可以借給朋友用嗎？", options:["可以","不行，這是你的專屬資源"], a:1 },
+      { id:"ac5", q:"看房時若覺得房東怪怪的，社工在場可以？", options:["跟房東吵架","暗示社工並安全離開"], a:1 },
+      { id:"ac6", q:"簽約時，社工陪同可以幫忙確認什麼？", options:["確認合約條款合理性","幫忙殺價"], a:0 },
+      { id:"ac7", q:"為什麼有些工作未成年需要家長或社工同意？", options:["勞基法保護兒少權益","老闆想找麻煩"], a:0 },
+      { id:"ac8", q:"社工陪同去公家機關辦事的好處？", options:["不用排隊","協助釐清行政流程與文件"], a:1 },
+    ];
+
+    // 3. Aid (Economic Support) Questions
+    const AID_QS = [
+      { id:"ai1", q:"CCSA 提供經濟補助的目的是？", options:["讓你買遊戲點數","穩定生活與就學就業"], a:1 },
+      { id:"ai2", q:"申請補助時，需要配合什麼？", options:["記帳與財務規劃","什麼都不用做"], a:0 },
+      { id:"ai3", q:"如果經濟狀況改善了（例如找到工作），應該？", options:["趕快花掉","主動告知社工"], a:1 },
+      { id:"ai4", q:"補助款下來後，最好的分配方式？", options:["先付房租/生活費","先請客"], a:0 },
+      { id:"ai5", q:"為了申請補助而編造理由，會有什麼後果？", options:["沒關係","信用破產/法律責任"], a:1 },
+      { id:"ai6", q:"這筆補助款可以拿去投資嗎？", options:["可以博一把","不建議，應優先穩定生活"], a:1 },
+    ];
+
+    // 4. Counseling Questions
+    const COUNSEL_QS = [
+      { id:"co1", q:"心理諮商的主要功能是？", options:["幫你做決定","陪伴探索與情緒整理"], a:1 },
+      { id:"co2", q:"覺得心情低落、睡不著持續兩週以上？", options:["多喝熱水","尋求專業協助"], a:1 },
+      { id:"co3", q:"諮商師會把我的秘密告訴別人嗎？", options:["會到處講","有保密原則(除自傷傷人外)"], a:1 },
+      { id:"co4", q:"去諮商代表我有病嗎？", options:["是","不是，代表重視心理健康"], a:1 },
+      { id:"co5", q:"諮商時不知道要說什麼？", options:["那就沉默","可以直接說「我不知道說什麼」"], a:1 },
+      { id:"co6", q:"諮商時可以說真話嗎？", options:["要說好聽的","可以安心表達真實感受"], a:1 },
+    ];
+
+    // 5. Training Questions
+    const TRAINING_QS = [
+      { id:"tr1", q:"自立培訓的目標是？", options:["發便當","提升解決問題的能力"], a:1 },
+      { id:"tr2", q:"遇到挫折時，韌性表現為？", options:["放棄","尋求資源並嘗試解決"], a:1 },
+      { id:"tr3", q:"時間管理的第一步？", options:["隨性生活","區分輕重緩急"], a:1 },
+      { id:"tr4", q:"職場遇到霸凌，可以怎麼做？", options:["忍氣吞聲","蒐證並尋求協助"], a:1 },
+      { id:"tr5", q:"學習新技能對自立有幫助嗎？", options:["沒用","有，增加就業競爭力"], a:1 },
     ];
 
     const HOUSE_QS = [
@@ -315,15 +359,15 @@
       // Job Center uses JOB_QS
       job_test: { title:"就業服務站測驗", pickOne:false, questions: JOB_QS },
       
-      // Welfare uses mixed
+      // Welfare uses mixed (Borrowing House & Job questions for Welfare for now, or define specific if needed)
       welfare_life: { title:"社福中心：生活支持", pickOne:false, questions: HOUSE_QS.slice(0,10) }, 
       welfare_emergency: { title:"社福中心：急難補助", pickOne:false, questions:[{id:"em1", q:"急難補助用途？", options:["買手機","生活陷困"], a:1}, ...JOB_QS.slice(0,5)] },
       
-      // CCSA
-      ccsa_aid: { title:"CCSA：經濟支持", pickOne:false, questions: DORM_QS.slice(0,5) },
-      ccsa_accompany: { title:"CCSA：申請陪同", pickOne:false, questions: DORM_QS.slice(5,10) },
-      ccsa_counseling: { title:"CCSA：心理諮商", pickOne:false, questions: DORM_QS.slice(10,15) },
-      ccsa_training: { title:"CCSA：自立培訓", pickOne:false, questions: JOB_QS.slice(10,15) },
+      // CCSA - Corrected mapping
+      ccsa_aid: { title:"CCSA：經濟支持", pickOne:false, questions: AID_QS },
+      ccsa_accompany: { title:"CCSA：申請陪同", pickOne:false, questions: ACCOMPANY_QS },
+      ccsa_counseling: { title:"CCSA：心理諮商", pickOne:false, questions: COUNSEL_QS },
+      ccsa_training: { title:"CCSA：自立培訓", pickOne:false, questions: TRAINING_QS },
       ccsa_interview: { title:"CCSA 宿舍面談", pickOne:false, questions: DORM_QS },
       
       // Housing Check
